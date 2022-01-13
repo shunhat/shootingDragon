@@ -6,17 +6,10 @@ import math
 enemy_list = []
 enemy2_list = []
 enemy3_list = []
-# ====== gravity set ======
-gravity = -0.7
 # ====== create Fire ======
 fire_list = []
 # ====== create Fruit =====
 fruit_list = []
-
-# ====== 敵の出現するペース =====
-enemy_pace = 20
-enemy2_pace = 30
-enemy3_pace = 50
 
 # ====== constants ========
 SCENE_TITLE = 0
@@ -51,7 +44,6 @@ class Enemy:
     def __init__(self):
         self.pos = Vec2(184, random.randint(0,170))
         self.speed = 2
-        self.dir = 1
         self.time = 0
             
     def move(self, x, y):
@@ -137,14 +129,14 @@ class App:
         self.player.move(10, pyxel.mouse_y)
             
         # ====== ctrl Enemy ====== 
-        if pyxel.frame_count % enemy_pace == 0:
+        if pyxel.frame_count % 20 == 0:
             enemy_list.append(Enemy())
             
         enemy_count = len(enemy_list)
         for i in range(enemy_count):
             if 0 < enemy_list[i].pos.x < 200:
-                enemy_list[i].pos.x += -enemy_list[i].speed * enemy_list[i].time * enemy_list[i].dir
-                enemy_list[i].pos.y += -0.5 * gravity * enemy_list[i].time * enemy_list[i].time * enemy_list[i].dir      
+                enemy_list[i].pos.x += -enemy_list[i].speed * enemy_list[i].time
+                enemy_list[i].pos.y += 0.35 * enemy_list[i].time * enemy_list[i].time    
                 enemy_list[i].time += 0.05
                 enemy_list[i].move(enemy_list[i].pos.x, enemy_list[i].pos.y)
                 
@@ -158,7 +150,7 @@ class App:
                 break
         
         # ====== ctrl Enemy2 ====== 
-        if pyxel.frame_count % enemy2_pace == 0:
+        if pyxel.frame_count % 30 == 0:
             enemy2_list.append(Enemy2())
             
         enemy2_count = len(enemy2_list)
@@ -180,7 +172,7 @@ class App:
                 break
         
         # ====== ctrl Enemy3 ======
-        if pyxel.frame_count % enemy3_pace == 0:
+        if pyxel.frame_count % 50 == 0:
             enemy3_list.append(Enemy3())
             
         enemy3_count = len(enemy3_list)
