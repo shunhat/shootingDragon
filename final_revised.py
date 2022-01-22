@@ -10,7 +10,8 @@ enemy3_list = []
 fire_list = []
 # ====== create Fruit =====
 fruit_list = []
-
+# ====== create Blast =====
+blast_list = []
 # ====== constants ========
 SCENE_TITLE = 0
 SCENE_PLAY = 1
@@ -96,7 +97,20 @@ class Fruit:
     def move(self, x, y):
         self.x = x
         self.y = y
+
+class Blast:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.pos = Vec2(x, y)
+        self.radius = 1
+        self.flag = False
+    
+    def move(self):
+        self.radius += 1.5
         
+        if self.radius > 12:
+            self.flag = True
         
 # =======　以下Appクラス ========
 
@@ -109,6 +123,7 @@ class App:
         # ====== create Player ======
         self.player = Player()
         self.score = 0
+        self.best_score = 0
         
         pyxel.run(self.update, self.draw)
         
@@ -140,8 +155,8 @@ class App:
                 enemy_list[i].time += 0.05
                 enemy_list[i].move(enemy_list[i].pos.x, enemy_list[i].pos.y)
                 
-                if ((enemy_list[i].pos.x - 16 <= self.player.pos.x <= enemy_list[i].pos.x + 16)
-                    and (enemy_list[i].pos.y - 16 <= self.player.pos.y <= enemy_list[i].pos.y + 16)):
+                if ((enemy_list[i].pos.x - 8  <= self.player.pos.x <= enemy_list[i].pos.x + 8)
+                    and (enemy_list[i].pos.y - 8 <= self.player.pos.y <= enemy_list[i].pos.y + 8)):
                     self.player.health -= 1
                     pyxel.play(2, 2)
                     del enemy_list[i] 
@@ -160,8 +175,8 @@ class App:
                 enemy2_list[i].speed += 0.1  
                 enemy2_list[i].move(enemy2_list[i].pos.x, enemy2_list[i].pos.y)
             
-                if ((enemy2_list[i].pos.x <= self.player.pos.x <= enemy2_list[i].pos.x + 16)
-                    and (enemy2_list[i].pos.y <= self.player.pos.y <= enemy2_list[i].pos.y + 16)):
+                if ((enemy2_list[i].pos.x <= self.player.pos.x <= enemy2_list[i].pos.x + 14)
+                    and (enemy2_list[i].pos.y <= self.player.pos.y <= enemy2_list[i].pos.y + 14)):
                     self.player.health -= 1
                     pyxel.play(2, 2)
                     del enemy2_list[i]
@@ -219,6 +234,7 @@ class App:
                 for j in range(enemy_count):
                     if ((enemy_list[j].pos.x < fire_list[i].pos.x < enemy_list[j].pos.x + 16)
                         and (enemy_list[j].pos.y < fire_list[i].pos.y < enemy_list[j].pos.y + 16)):
+                        blast_list.append(Blast(enemy_list[j].pos.x + 8, enemy_list[j].pos.y + 8))
                         del enemy_list[j]
                         del fire_list[i]
                         self.score += 1
@@ -228,6 +244,7 @@ class App:
                 for j in range(enemy2_count):
                     if ((enemy2_list[j].pos.x < fire_list[i].pos.x < enemy2_list[j].pos.x + 16)
                         and (enemy2_list[j].pos.y < fire_list[i].pos.y < enemy2_list[j].pos.y + 16)):
+                        blast_list.append(Blast(enemy2_list[j].pos.x + 8, enemy2_list[j].pos.y + 8))
                         del enemy2_list[j]
                         del fire_list[i]
                         self.score += 1
@@ -239,7 +256,8 @@ class App:
                         and (enemy3_list[j].pos.y < fire_list[i].pos.y < enemy3_list[j].pos.y + 32)):
                         enemy3_list[j].health -= 1
                         del fire_list[i]
-                    if enemy3_list[j].health <0:
+                    if enemy3_list[j].health < 0:
+                        blast_list.append(Blast(enemy3_list[j].pos.x + 16, enemy3_list[j].pos.y + 16))
                         del enemy3_list[j]
                         self.score += 3
             else:
@@ -265,6 +283,13 @@ class App:
                 del fruit_list[i]
                 break
         
+        # ====== ctrl Blast ======
+        blast_count = len(blast_list)
+        for i in range(blast_count):
+            blast_list[i].move()
+            if blast_list[i].flag:
+                del blast_list[i]
+        
         # ======= GAME OVER ======
         if self.player.health <= 0:
             self.scene = SCENE_GAMEOVER
@@ -275,6 +300,9 @@ class App:
         enemy3_list.clear()
         fire_list.clear()
         fruit_list.clear()
+        blast_list.clear()
+        if self.score > self.best_score:
+            self.best_score = self.score
         
         if pyxel.btnp(pyxel.KEY_ENTER):
             self.scene = SCENE_PLAY
@@ -286,6 +314,7 @@ class App:
         pyxel.cls(7)
         
         if self.scene == SCENE_TITLE:
+            pyxel.blt(86,86, 0, 16,0,16,16,7)
             pyxel.text(70, 20, "Shooting Dragon", pyxel.frame_count % 16)
             pyxel.text(70, 180, "- PRESS ENTER -", 13)
             
@@ -318,18 +347,26 @@ class App:
             # ======= show Fruit ======
             for fruit in fruit_list:
                 pyxel.blt(fruit.pos.x, fruit.pos.y, 0, 0, 32, 8, 8, 7)
+                
+            # ======= show Blast ======
+            for blast in blast_list:
+                pyxel.circ(blast.pos.x, blast.pos.y, blast.radius, 10)
+                pyxel.circb(blast.pos.x, blast.pos.y, blast.radius, 8)
             
             # ======= reload ======
             if self.player.amo == 0:
                 pyxel.text(65, 100, "press R to RELOAD!!", 8)
-            
-            pyxel.text(80,10, "score:" + str(self.score), 0)
-            pyxel.text(80,20, "health:"+ str(self.player.health), 8)
-            pyxel.text(85, 180, "amo:" + str(self.player.amo), 5)
+             
+            pyxel.text(75,5, "best score:"+str(self.best_score),13)
+            pyxel.text(70,15, "current score:" + str(self.score), pyxel.frame_count % 16)
+            pyxel.text(110,180, "HP:"+ str(self.player.health), 8)
+            pyxel.text(70, 180, "amo:" + str(self.player.amo), 5)
             pyxel.text(65, 190, "press R to reload", 13)
         
         elif self.scene == SCENE_GAMEOVER:
             pyxel.text(80, 20, "GAME OVER", 8)
+            pyxel.text(75, 80, "YOUR SCORE:" + str(self.score), 0)
+            pyxel.text(75, 100, "BEST SCORE:" + str(self.best_score), pyxel.frame_count % 16)
             pyxel.text(70, 180, "- PRESS ENTER -", 13)
             
 App()
